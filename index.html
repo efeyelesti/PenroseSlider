@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Penrose Moiré Applet</title>
+<style>
+  body {
+    background: #fff;
+    color: #111;
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+  h2 { margin-top: 15px; }
+  svg {
+    width: 80vw;
+    height: 80vh;
+    border: 1px solid #ccc;
+    margin-top: 10px;
+    background: #fff;
+  }
+  select, button, input[type=range] {
+    margin: 5px;
+    padding: 6px 10px;
+    background: #f2f2f2;
+    color: #111;
+    border: 1px solid #aaa;
+    border-radius: 6px;
+  }
+  select:hover, button:hover {
+    background: #ddd;
+    cursor: pointer;
+  }
+  input[type=range] {
+    width: 60%;
+    vertical-align: middle;
+  }
+  .controls {
+    margin-top: 10px;
+  }
+  .label {
+    display: inline-block;
+    width: 100px;
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+
+<h2>Penrose Moiré Applet</h2>
+
+<!-- === Parameter Controls === -->
+<div class="controls">
+  <label class="label">Plot type:</label>
+  <select id="folder">
+    <option value="points">Points</option>
+    <option value="connections">Connections</option>
+    <option value="both" selected>Both</option>
+  </select>
+
+  <label class="label">Point color:</label>
+  <select id="pc">
+    <option value="0">royalblue</option>
+    <option value="1">mediumorchid</option>
+    <option value="2">orangered</option>
+  </select>
+
+  <label class="label">Line color:</label>
+  <select id="lc">
+    <option value="0">gray</option>
+    <option value="1">black</option>
+    <option value="2">navy</option>
+  </select>
+
+  <label class="label">Thickness:</label>
+  <select id="tl">
+    <option value="0">0.5</option>
+    <option value="1">0.75</option>
+    <option value="2" selected>1.0</option>
+  </select>
+
+  <label class="label">Alpha:</label>
+  <select id="al">
+    <option value="0">0.5</option>
+    <option value="1">0.75</option>
+    <option value="2" selected>1.0</option>
+  </select>
+
+  <label class="label">Point size:</label>
+  <select id="ps">
+    <option value="0">2</option>
+    <option value="1">4</option>
+    <option value="2">5</option>
+    <option value="3">6</option>
+    <option value="4" selected>7</option>
+  </select>
+
+  <button onclick="loadVariant()">Load</button>
+</div>
+
+<!-- === Layer Controls === -->
+<div class="controls">
+  <label class="label">Bottom opacity:</label>
+<input id="opacityInput" type="number" min="0" max="1" step="0.05" value="1.0" style="width:70px;">
+<span id="opacityLabel"></span>
+
+<label class="label">Direction (°):</label>
+<select id="angleSel">
+  <option value="0">0°</option>
+  <option value="36">36°</option>
+  <option value="72">72°</option>
+  <option value="108">108°</option>
+  <option value="144">144°</option>
+  <option value="180">180°</option>
+  <option value="216">216°</option>
+  <option value="252">252°</option>
+  <option value="288">288°</option>
+  <option value="324">324°</option>
+</select>
+
+<label class="label">Distance:</label>
+<input id="distInput" type="number" min="0" max="100" step="0.1" value="0" style="width:80px;">
+
+</div>
+
+<!-- === SVG Canvas === -->
+<svg id="canvas" viewBox="0 0 1000 1000">
+  <g id="zoomGroup">
+    <image id="layer1" width="1000" height="1000" opacity="1.0"/>
+    <image id="layer2" width="1000" height="1000" opacity="1.0"/>
+  </g>
+</svg>
+
+<!-- === Zoom Control === -->
+<div class="controls">
+  <label class="label">Zoom (%):</label>
+  <input id="zoomSlider" type="range" min="50" max="300" step="5" value="100">
+  <span id="zoomLabel">100%</span>
+</div>
+
+<p id="readout">Shift = 0.0 lattice units</p>
+
+<script>
+const folderSel = document.getElementById("folder");
+const pcSel = document.getElementById("pc");
+const lcSel = document.getElementById("lc");
+const tlSel = document.getElementById("tl");
+const alSel = document.getElementById("al");
+const psSel = document.getElementById("ps");
+const angleSel = document.getElementById("angleSel");
+const distSlider = document.getElementById("distSlider");
+const distLabel = document.getElementById("distLabel");
+const opacitySlider = document.getElementById("opacitySlider");
+const opacityLabel = document.getElementById("opacityLabel");
+const zoomSlider = document.getElementById("zoomSlider");
+const zoomLabel = document.getElementById("zoomLabel");
+const layer1 = document.getElementById("layer1");
+const layer2 = document.getElementById("layer2");
+const zoomGroup = document.getElementById("zoomGroup");
+const readout = document.getElementById("readout");
+
+function loadVariant() {
+  const folder = folderSel.value;
+  const pc_i = pcSel.value;
+  const lc_i = lcSel.value;
+  const tl_i = tlSel.value;
+  const al_i = alSel.value;
+  const ps_i = psSel.value;
+
+  const filename = `N_100_pl_${folder}_pc${pc_i}_lc${lc_i}_tl${tl_i}_al${al_i}_ps${ps_i}.svg`;
+  const path = `figure_folder/${folder}/${filename}`;
+
+  layer1.setAttribute("href", path);
+  layer2.setAttribute("href", path);
+  layer1.setAttribute("opacity", opacitySlider.value);
+  layer2.setAttribute("transform", "translate(0,0)");
+  distSlider.value = 0;
+  distLabel.textContent = "0.0";
+  readout.textContent = `Loaded: ${path}`;
+}
+
+
+// === Bottom Layer Opacity ===
+const opacityInput = document.getElementById("opacityInput");
+opacityInput.addEventListener("input", () => {
+  const val = parseFloat(opacityInput.value);
+  layer1.setAttribute("opacity", val);
+  opacityLabel.textContent = val.toFixed(2);
+});
+
+// === Directional Translation ===
+const distInput = document.getElementById("distInput");
+
+// common update function
+function updateTranslation() {
+  const dist = parseFloat(distInput.value);
+  const angleDeg = parseFloat(angleSel.value);
+  const angleRad = angleDeg * Math.PI / 180;
+  const dx = dist * Math.cos(angleRad);
+  const dy = dist * Math.sin(angleRad);
+  layer2.setAttribute("transform", `translate(${dx},${dy})`);
+  readout.textContent = `Shift = ${dist.toFixed(1)} units @ ${angleDeg}°`;
+}
+
+// update when value is changed manually or with Enter
+distInput.addEventListener("change", updateTranslation);
+
+// handle ↑ / ↓ arrows to move ±1 unit
+distInput.addEventListener("keydown", (e) => {
+  let val = parseFloat(distInput.value) || 0;
+  if (e.key === "ArrowUp") {
+    val += 0.25;
+    distInput.value = val.toFixed(1);
+    updateTranslation();
+    e.preventDefault();
+  } else if (e.key === "ArrowDown") {
+    val -= 0.25;
+    distInput.value = val.toFixed(1);
+    updateTranslation();
+    e.preventDefault();
+  }
+});
+
+
+
+// === Zoom Control ===
+zoomSlider.addEventListener("input", () => {
+  const zoom = parseFloat(zoomSlider.value);
+  const scale = zoom / 100;
+  zoomGroup.setAttribute("transform", `scale(${scale}) translate(${(1-scale)*500}, ${(1-scale)*500})`);
+  zoomLabel.textContent = `${zoom.toFixed(0)}%`;
+});
+
+// === Initialize ===
+loadVariant();
+</script>
+
+</body>
+</html>
